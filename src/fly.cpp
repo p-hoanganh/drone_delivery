@@ -35,20 +35,20 @@ public:
 
     void kp_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
-            roll_kp = msg->data;
-            pitch_kp = msg->data;
+            target_x = msg->data;
+            // y_kp = msg->data;
         }
     
     void ki_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
-            roll_ki = msg->data;
-            pitch_ki = msg->data;
+            target_y = msg->data;
+            // y_ki = msg->data;
         }
     
     void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
-            roll_kd = msg->data;
-            pitch_kd = msg->data;
+            // x_kd = msg->data;
+            // y_kd = msg->data;
         }
 
 
@@ -82,8 +82,8 @@ void timer_callback()
     // Calculate the control signal for height control
     double velocity_ = PID_height_control(target_height);
 
-    std::array<double, 3> rpy = getRollPitchYaw(0.0, 0.0);
-    rpy = {0.0, 0.0, 0.0};
+    std::array<double, 3> rpy = getRollPitchYaw(target_x, target_y);
+    // rpy = {0.0, 0.0, 0.0};
     RCLCPP_INFO_STREAM(get_logger(), "Roll: " << rpy.at(0) << " " << "Pitch: " << rpy.at(1) << " " << "Yaw: " << rpy.at(2));
     // Calculate the control signal for orientation control
     std::array<double, 6> orientation_velocity = PID_orientation_control(rpy.at(0), rpy.at(1), rpy.at(2));
@@ -129,6 +129,16 @@ std::array<double, 3> getRollPitchYaw(double target_x, double target_y){
     double x_control_signal = x_kp * x_error + x_ki * x_integral + x_kd * x_derivative;
     double y_control_signal = y_kp * y_error + y_ki * y_integral + y_kd * y_derivative;
 
+    if (x_control_signal >  0.261799){
+        x_control_signal =  0.261799;
+    } else if (x_control_signal < -0.261799){
+        x_control_signal = -0.2617995;
+    }
+    if (y_control_signal >  0.261799){
+        y_control_signal =  0.261799;
+    } else if (y_control_signal < -0.261799){
+        y_control_signal = -0.2617995;
+    }
     std::array<double, 3> rpy = { -y_control_signal, x_control_signal, 0.0};
 
     return rpy;
@@ -258,17 +268,20 @@ private:
     double y_prev_error = 0.0;
 
 
-    double x_kp = 0.0005;
-    double x_ki = 0.00002;
-    double x_kd = 0.001;
+    double x_kp = 0.01;
+    double x_ki = 0.001;
+    double x_kd = 0.000001;
 
-    double y_kp = 0.005;
-    double y_ki = 0.00002;
-    double y_kd = 0.0001;
+    double y_kp = 0.01;
+    double y_ki = 0.001;
+    double y_kd = 0.000001;
 
     double kp = 10.2; // Proportional control gain
     double ki = 0.003; // Integral control gain
     double kd = 7.0; // Derivative control gain
+
+    double target_x = 0.0;
+    double target_y = 0.0;
     
     
 };

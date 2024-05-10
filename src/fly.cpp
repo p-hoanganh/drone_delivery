@@ -261,9 +261,9 @@ private:
     double y_ki = 0.00002;
     double y_kd = 0.0001;
 
-    double kp = 0.0; // Proportional control gain
-    double ki = 0.0; // Integral control gain
-    double kd = 0.0; // Derivative control gain
+    double kp = 10.2; // Proportional control gain
+    double ki = 0.003; // Integral control gain
+    double kd = 7.0; // Derivative control gain
     
     
 };

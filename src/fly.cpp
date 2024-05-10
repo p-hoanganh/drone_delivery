@@ -35,20 +35,20 @@ public:
 
     void kp_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
-            kp = msg->data;
-            // pitch_kp = msg->data;
+            roll_kp = msg->data;
+            pitch_kp = msg->data;
         }
     
     void ki_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
-            ki = msg->data;
-            // pitch_ki = msg->data;
+            roll_ki = msg->data;
+            pitch_ki = msg->data;
         }
     
     void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
-            kd = msg->data;
-            // pitch_kd = msg->data;
+            roll_kd = msg->data;
+            pitch_kd = msg->data;
         }
 
 
@@ -193,6 +193,11 @@ std::array<double,6> PID_orientation_control(double roll, double pitch, double y
     double roll_control_signal = roll_kp * roll_error + roll_ki * roll_integral + roll_kd * roll_derivative;
     double pitch_control_signal = pitch_kp * pitch_error + pitch_ki * pitch_integral + pitch_kd * pitch_derivative;
     double yaw_control_signal = yaw_kp * yaw_error + yaw_ki * yaw_integral + yaw_kd * yaw_derivative;
+    
+
+    roll_prev_error = roll_error;
+    pitch_prev_error = pitch_error;
+    yaw_prev_error = yaw_error;
 
     std::array<double, 6> velocity_ = {roll_control_signal, pitch_control_signal, yaw_control_signal, rpy.at(0), rpy.at(1), rpy.at(2)};
 
@@ -229,19 +234,19 @@ private:
     double yaw_prev_error = 0.0;
 
     //Roll PID
-    double roll_kp = 0.0;
-    double roll_ki = 0.00000;
-    double roll_kd = 0.0;
+    double roll_kp = 2.5;
+    double roll_ki = 0.00001;
+    double roll_kd = 0.001;
 
     //Pitch PID
-    double pitch_kp = 0.0;
-    double pitch_ki = 0.00000;
-    double pitch_kd = 0.0;
+    double pitch_kp = 2.5;
+    double pitch_ki = 0.00001;
+    double pitch_kd = 0.001;
 
     //Yaw PID
-    double yaw_kp = 0.00000;
-    double yaw_ki = 0.000000;
-    double yaw_kd = 0.00;
+    double yaw_kp = 2.50000;
+    double yaw_ki = 0.000001;
+    double yaw_kd = 0.001;
 
 
     // X pose 

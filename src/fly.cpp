@@ -1,0 +1,277 @@
+#include <iostream>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/float64.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
+#include <drone_plugin/msg/motor_speed.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <cmath>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
+#include <kdl/frames.hpp>
+#include <tf2_kdl/tf2_kdl.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
+
+class Fly : public rclcpp::Node
+{
+
+public:
+  Fly() : Node("fly")
+  {
+    RCLCPP_INFO(get_logger(), "Fly node has been created.");
+    publisher_ = this->create_publisher<drone_plugin::msg::MotorSpeed>("motor_speed", 10);
+    subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>("drone_pose", 10,std::bind(&Fly::pose_callback, this, std::placeholders::_1));
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&Fly::timer_callback, this));
+
+
+    kp_sub_ = this->create_subscription<std_msgs::msg::Float64>("kp", 10, std::bind(&Fly::kp_callback, this, std::placeholders::_1));
+    ki_sub_ = this->create_subscription<std_msgs::msg::Float64>("ki", 10, std::bind(&Fly::ki_callback, this, std::placeholders::_1));
+    kd_sub_ = this->create_subscription<std_msgs::msg::Float64>("kd", 10, std::bind(&Fly::kd_callback, this, std::placeholders::_1));
+
+  }
+
+    void kp_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            kp = msg->data;
+            // pitch_kp = msg->data;
+        }
+    
+    void ki_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            ki = msg->data;
+            // pitch_ki = msg->data;
+        }
+    
+    void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            kd = msg->data;
+            // pitch_kd = msg->data;
+        }
+
+
+    void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+    {
+        pose_ = *msg;
+    }
+
+std::array<double, 3> get_euler_from_quaternion(tf2::Quaternion quaternion)
+    {
+        double roll;
+        double pitch;
+        double yaw;
+        tf2::Matrix3x3 matrix(quaternion);
+        matrix.getRPY(roll, pitch, yaw);
+        // create an empty array of doubles to store the roll, pitch, yaw
+        std::array<double, 3> rpy;
+        rpy.at(0) = roll;
+        rpy.at(1) = pitch;
+        rpy.at(2) = yaw;
+
+        return rpy;
+    }
+
+void timer_callback()
+{   
+    
+    double target_height = 1.0; // Target height to hover at
+    
+
+    // Calculate the control signal for height control
+    double velocity_ = PID_height_control(target_height);
+
+    std::array<double, 3> rpy = getRollPitchYaw(0.0, 0.0);
+    rpy = {0.0, 0.0, 0.0};
+    RCLCPP_INFO_STREAM(get_logger(), "Roll: " << rpy.at(0) << " " << "Pitch: " << rpy.at(1) << " " << "Yaw: " << rpy.at(2));
+    // Calculate the control signal for orientation control
+    std::array<double, 6> orientation_velocity = PID_orientation_control(rpy.at(0), rpy.at(1), rpy.at(2));
+    // std::array<double, 3> orientation_velocity = {0.0, 0.0, 0.0};
+
+    float prop_1 = static_cast<float>(base_speed_+ velocity_  + orientation_velocity.at(0) + orientation_velocity.at(1) + orientation_velocity.at(2));
+    float prop_2 = static_cast<float>(base_speed_ + velocity_ + orientation_velocity.at(0) - orientation_velocity.at(1) - orientation_velocity.at(2));
+    float prop_3 = static_cast<float>(base_speed_ + velocity_ - orientation_velocity.at(0) - orientation_velocity.at(1) + orientation_velocity.at(2));
+    float prop_4 = static_cast<float>(base_speed_ + velocity_ - orientation_velocity.at(0) + orientation_velocity.at(1) - orientation_velocity.at(2));
+
+    auto message = drone_plugin::msg::MotorSpeed();
+    message.name = std::vector<std::string>{"prop_1","prop_2","prop_3","prop_4"};
+    message.velocity = std::vector<float>{prop_1, -prop_2, prop_3, -prop_4};
+    publisher_->publish(message);
+    RCLCPP_INFO_STREAM(get_logger(), "Prop 1: " << prop_1 << " " << "Prop 2: " << prop_2 << " " << "Prop 3: " << prop_3 << " " << "Prop 4: " << prop_4);
+    RCLCPP_INFO_STREAM(get_logger(), "Heigth: "<<pose_.pose.position.z<<" Roll: " << orientation_velocity.at(3) << " " << "Pitch: " << orientation_velocity.at(4) << " " << "Yaw: " << orientation_velocity.at(5));
+}
+
+std::array<double, 3> getRollPitchYaw(double target_x, double target_y){
+    double x = pose_.pose.position.x;
+    double y = pose_.pose.position.y;
+    // RCLCPP_INFO_STREAM(get_logger(), "X: " << x << " " << "Y: " << y);
+    double x_error = target_x - x;
+    double y_error = target_y - y;
+    // RCLCPP_INFO_STREAM(get_logger(), "X error: " << x_error << " " << "Y error: " << y_error);
+
+    rclcpp::Time current_time = this->get_clock()->now();
+
+    rclcpp::Duration dt = current_time - this->current_time;
+    this->current_time = current_time;
+
+
+
+    x_integral += x_error * dt.seconds();
+    y_integral += y_error * dt.seconds();
+
+    double x_derivative = (x_error - x_prev_error) / dt.seconds();
+    double y_derivative = (y_error - y_prev_error) / dt.seconds();
+
+    x_prev_error = x_error;
+    y_prev_error = y_error;
+
+    double x_control_signal = x_kp * x_error + x_ki * x_integral + x_kd * x_derivative;
+    double y_control_signal = y_kp * y_error + y_ki * y_integral + y_kd * y_derivative;
+
+    std::array<double, 3> rpy = { -y_control_signal, x_control_signal, 0.0};
+
+    return rpy;
+
+
+
+}
+double PID_height_control(double target_height)
+{       
+    rclcpp::Time current_time = this->get_clock()->now();
+
+    // Calculate the error between the target height and current height
+    double error = target_height - pose_.pose.position.z;
+
+    // Update the integral term
+    rclcpp::Duration dt = current_time - this->current_time;
+    this->current_time = current_time;
+    integral += error * dt.seconds();
+
+    // Calculate the derivative term
+    double derivative = (error - prev_error) / dt.seconds();
+
+    // Calculate the control signal using PID control
+    double control_signal = kp * error + ki * integral + kd * derivative;
+
+    // Adjust the base speed based on the control signal
+    double velocity_ = control_signal;
+
+    // Update the previous error for the next iteration
+    prev_error = error;
+
+    return velocity_;
+}
+
+std::array<double,6> PID_orientation_control(double roll, double pitch, double yaw)
+{
+    // Get the current orientation of the drone
+    tf2::Quaternion quaternion;
+    tf2::fromMsg(pose_.pose.orientation, quaternion);
+    std::array<double, 3> rpy = get_euler_from_quaternion(quaternion);
+
+    double roll_error = roll - rpy.at(0);
+    double pitch_error = pitch - rpy.at(1);
+    double yaw_error = yaw - rpy.at(2);
+
+    rclcpp::Time current_time = this->get_clock()->now();
+
+    // Update the integral term
+    rclcpp::Duration dt = current_time - this->current_time;
+    this->current_time = current_time;
+    
+    roll_integral += roll_error * dt.seconds();
+    pitch_integral += pitch_error * dt.seconds();
+    yaw_integral += yaw_error * dt.seconds();
+
+    // Calculate the derivative term
+    double roll_derivative = (roll_error - roll_prev_error) / dt.seconds();
+    double pitch_derivative = (pitch_error - pitch_prev_error) / dt.seconds();
+    double yaw_derivative = (yaw_error - yaw_prev_error) / dt.seconds();
+
+    // Calculate the control signal using PID control
+    double roll_control_signal = roll_kp * roll_error + roll_ki * roll_integral + roll_kd * roll_derivative;
+    double pitch_control_signal = pitch_kp * pitch_error + pitch_ki * pitch_integral + pitch_kd * pitch_derivative;
+    double yaw_control_signal = yaw_kp * yaw_error + yaw_ki * yaw_integral + yaw_kd * yaw_derivative;
+
+    std::array<double, 6> velocity_ = {roll_control_signal, pitch_control_signal, yaw_control_signal, rpy.at(0), rpy.at(1), rpy.at(2)};
+
+    return velocity_;
+    
+}
+
+private:
+    rclcpp::Publisher<drone_plugin::msg::MotorSpeed>::SharedPtr publisher_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr kd_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr ki_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr kp_sub_;
+
+    rclcpp::TimerBase::SharedPtr timer_;
+    geometry_msgs::msg::PoseStamped pose_;
+    double base_speed_ = 117.0;
+    // Get the current ROS time
+    rclcpp::Time current_time = this->get_clock()->now();
+    // Initialize variables for PID control
+    double integral = 0.0;
+    double prev_error = 0.0;
+
+    // Roll
+    double roll_integral = 0.0;
+    double roll_prev_error = 0.0;
+
+    // Pitch
+    double pitch_integral = 0.0;
+    double pitch_prev_error = 0.0;
+
+    // Yaw
+    double yaw_integral = 0.0;
+    double yaw_prev_error = 0.0;
+
+    //Roll PID
+    double roll_kp = 0.0;
+    double roll_ki = 0.00000;
+    double roll_kd = 0.0;
+
+    //Pitch PID
+    double pitch_kp = 0.0;
+    double pitch_ki = 0.00000;
+    double pitch_kd = 0.0;
+
+    //Yaw PID
+    double yaw_kp = 0.00000;
+    double yaw_ki = 0.000000;
+    double yaw_kd = 0.00;
+
+
+    // X pose 
+    double x_integral = 0.0;
+    double x_prev_error = 0.0;
+
+    // Y pose
+    double y_integral = 0.0;
+    double y_prev_error = 0.0;
+
+
+    double x_kp = 0.0005;
+    double x_ki = 0.00002;
+    double x_kd = 0.001;
+
+    double y_kp = 0.005;
+    double y_ki = 0.00002;
+    double y_kd = 0.0001;
+
+    double kp = 0.0; // Proportional control gain
+    double ki = 0.0; // Integral control gain
+    double kd = 0.0; // Derivative control gain
+    
+    
+};
+
+int main(int argc, char **argv)
+{
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<Fly>());
+  rclcpp::shutdown();
+  return 0;
+}

@@ -27,9 +27,9 @@ public:
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&Fly::timer_callback, this));
 
 
-    kp_sub_ = this->create_subscription<std_msgs::msg::Float64>("kp", 10, std::bind(&Fly::kp_callback, this, std::placeholders::_1));
-    ki_sub_ = this->create_subscription<std_msgs::msg::Float64>("ki", 10, std::bind(&Fly::ki_callback, this, std::placeholders::_1));
-    kd_sub_ = this->create_subscription<std_msgs::msg::Float64>("kd", 10, std::bind(&Fly::kd_callback, this, std::placeholders::_1));
+    kp_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_x", 10, std::bind(&Fly::kp_callback, this, std::placeholders::_1));
+    ki_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_y", 10, std::bind(&Fly::ki_callback, this, std::placeholders::_1));
+    kd_sub_ = this->create_subscription<std_msgs::msg::Float64>("height", 10, std::bind(&Fly::kd_callback, this, std::placeholders::_1));
 
   }
 
@@ -46,7 +46,8 @@ public:
         }
     
     void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
-        {
+        {   
+            target_height = msg->data;
             // x_kd = msg->data;
             // y_kd = msg->data;
         }
@@ -76,7 +77,7 @@ std::array<double, 3> get_euler_from_quaternion(tf2::Quaternion quaternion)
 void timer_callback()
 {   
     
-    double target_height = 1.0; // Target height to hover at
+    // Target height to hover at
     
 
     // Calculate the control signal for height control
@@ -269,11 +270,11 @@ private:
 
 
     double x_kp = 0.01;
-    double x_ki = 0.001;
+    double x_ki = 0.003;
     double x_kd = 0.000001;
 
     double y_kp = 0.01;
-    double y_ki = 0.001;
+    double y_ki = 0.003;
     double y_kd = 0.000001;
 
     double kp = 10.2; // Proportional control gain
@@ -282,6 +283,7 @@ private:
 
     double target_x = 0.0;
     double target_y = 0.0;
+    double target_height = 0.0;
     
     
 };

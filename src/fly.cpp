@@ -36,18 +36,21 @@ public:
     void kp_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
             target_x = msg->data;
+            // yaw_kp = msg->data;
             // y_kp = msg->data;
         }
     
     void ki_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
             target_y = msg->data;
+            // yaw_ki = msg->data;
             // y_ki = msg->data;
         }
     
     void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {   
             target_height = msg->data;
+            // yaw_kd = msg->data;
             // x_kd = msg->data;
             // y_kd = msg->data;
         }
@@ -101,6 +104,7 @@ void timer_callback()
     publisher_->publish(message);
     RCLCPP_INFO_STREAM(get_logger(), "Prop 1: " << prop_1 << " " << "Prop 2: " << prop_2 << " " << "Prop 3: " << prop_3 << " " << "Prop 4: " << prop_4);
     RCLCPP_INFO_STREAM(get_logger(), "Heigth: "<<pose_.pose.position.z<<" Roll: " << orientation_velocity.at(3) << " " << "Pitch: " << orientation_velocity.at(4) << " " << "Yaw: " << orientation_velocity.at(5));
+    RCLCPP_INFO_STREAM(get_logger(), "Error: "<< rpy.at(2)- orientation_velocity.at(5) << " Control Signal: "<< orientation_velocity.at(2));
 }
 
 std::array<double, 3> getRollPitchYaw(double target_x, double target_y){
@@ -255,9 +259,9 @@ private:
     double pitch_kd = 0.001;
 
     //Yaw PID
-    double yaw_kp = 2.50000;
-    double yaw_ki = 0.000001;
-    double yaw_kd = 0.001;
+    double yaw_kp = 3.5;
+    double yaw_ki = 0.00001;
+    double yaw_kd = 0.004;
 
 
     // X pose 
@@ -281,9 +285,9 @@ private:
     double ki = 0.003; // Integral control gain
     double kd = 7.0; // Derivative control gain
 
-    double target_x = 0.0;
-    double target_y = 0.0;
-    double target_height = 0.0;
+    double target_x = 0.5;
+    double target_y = 0.5;
+    double target_height = 1.0;
     
     
 };

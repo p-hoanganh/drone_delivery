@@ -23,6 +23,18 @@
       <static>true</static>
     </model>
 
+    <include>
+    <name>box_0</name>
+      <uri>model://box_0</uri>
+      <pose>0 5 2 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>oak_tree_217</name>
+      <pose> 5 5 0.01 0 0 2.190531670983007 </pose>
+      <uri>model://oak_tree</uri>
+    </include>
+
     <!-- A global light source -->
     <light type="directional" name="sun">
       <pose>0 0 1000 0 0 0</pose>

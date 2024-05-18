@@ -110,6 +110,7 @@ void timer_callback()
 std::array<double, 3> getRollPitchYaw(double target_x, double target_y){
     double x = pose_.pose.position.x;
     double y = pose_.pose.position.y;
+    
     // RCLCPP_INFO_STREAM(get_logger(), "X: " << x << " " << "Y: " << y);
     double x_error = target_x - x;
     double y_error = target_y - y;

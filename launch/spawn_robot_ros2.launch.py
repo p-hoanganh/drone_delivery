@@ -10,6 +10,10 @@ import launch_ros
 from launch_ros.actions import Node
 import xacro
 import random
+import xml.etree.ElementTree as ET
+import math
+from geometry_msgs.msg import Pose
+from gazebo_msgs.srv import SpawnEntity
 
 # this is the function launch  system will look for
 
@@ -61,6 +65,9 @@ def generate_launch_description():
                    '-topic', '/robot_description'
                    ]
     )
+    
+
+    
 
     # Publish Robot Desciption in String form in the topic /robot_description
     publish_robot_description = Node(

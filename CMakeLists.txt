@@ -49,6 +49,9 @@ set(GROUP3_INCLUDE_DEPENDS
 add_executable(fly src/fly.cpp )
 ament_target_dependencies(fly  ${GROUP3_INCLUDE_DEPENDS})
 
+add_executable(deliver src/pick_and_drop.cpp )
+ament_target_dependencies(deliver  ${GROUP3_INCLUDE_DEPENDS})
+
 install(DIRECTORY
   launch
   worlds
@@ -60,6 +63,7 @@ install(DIRECTORY
 install(TARGETS 
 
   fly
+  deliver
   DESTINATION lib/${PROJECT_NAME}
 )
 install(

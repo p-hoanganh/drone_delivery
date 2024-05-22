@@ -286,6 +286,116 @@
    
   </joint>
 
+  <!-- Cylindrical Stand 1 -->
+  <link name="stand_1">
+    <visual>
+      <origin xyz="-0.007625 -0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+      <material name="WHITE_MTL"/>
+    </visual>
+    <collision>
+      <origin xyz="-0.007625 -0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.000000001" ixy="0" ixz="0" iyy="0.000000001" iyz="0" izz="0.000000001"/>
+    </inertial>
+  </link>
+  <joint name="stand_1_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stand_1"/>
+    <origin xyz="-0.007625 -0.007625 -0.01" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Cylindrical Stand 2 -->
+  <link name="stand_2">
+    <visual>
+      <origin xyz="-0.007625 0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+      <material name="WHITE_MTL"/>
+    </visual>
+    <collision>
+      <origin xyz="-0.007625 0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.000000001" ixy="0" ixz="0" iyy="0.000000001" iyz="0" izz="0.000000001"/>
+    </inertial>
+  </link>
+  <joint name="stand_2_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stand_2"/>
+    <origin xyz="-0.007625 0.007625 -0.01" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Cylindrical Stand 3 -->
+  <link name="stand_3">
+    <visual>
+      <origin xyz="0.007625 -0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+      <material name="WHITE_MTL"/>
+    </visual>
+    <collision>
+      <origin xyz="0.007625 -0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.000000001" ixy="0" ixz="0" iyy="0.000000001" iyz="0" izz="0.000000001"/>
+    </inertial>
+  </link>
+  <joint name="stand_3_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stand_3"/>
+    <origin xyz="0.007625 -0.007625 -0.01" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Cylindrical Stand 4 -->
+  <link name="stand_4">
+    <visual>
+      <origin xyz="0.007625 0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+      <material name="WHITE_MTL"/>
+    </visual>
+    <collision>
+      <origin xyz="0.007625 0.007625 -0.01" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.001"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.001"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.000000001" ixy="0" ixz="0" iyy="0.000000001" iyz="0" izz="0.000000001"/>
+    </inertial>
+    
+
+  </link>
+  <joint name="stand_4_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="stand_4"/>
+    <origin xyz="0.007625 0.007625 -0.01" rpy="0 0 0"/>
+  </joint>
+
 <!--    
   <link name="imu_link">
     <inertial>
@@ -395,6 +505,44 @@
     </plugin>
     
   </gazebo>
+
+  <!-- <gazebo reference="stand_1">
+      <sensor type="contact" name="stand_1_bumper">
+        <update_rate>10</update_rate>
+        <contact>
+          <collision>base_link_fixed_joint_lump__stand_1_collision</collision>
+        </contact>
+      </sensor>
+  </gazebo>
+
+  <gazebo reference="stand_2">
+      <sensor type="contact" name="stand_2_bumper">
+        <update_rate>10</update_rate>
+        <contact>
+          <collision>base_link_fixed_joint_lump__stand_2_collision_1</collision>
+        </contact>
+      </sensor>
+  </gazebo>
+
+  <gazebo reference="stand_3">
+      <sensor type="contact" name="stand_3_bumper">
+        <update_rate>10</update_rate>
+        <contact>
+          <collision>base_link_fixed_joint_lump__stand_3_collision_2</collision>
+        </contact>
+      </sensor>
+  </gazebo>
+
+  <gazebo reference="stand_4">
+      <sensor type="contact" name="stand_4_bumper">
+        <update_rate>10</update_rate>
+        <contact>
+          <collision>base_link_fixed_joint_lump__stand_4_collision_3</collision>
+        </contact>
+      </sensor>
+  </gazebo> -->
+
+  
 
 
 </robot>

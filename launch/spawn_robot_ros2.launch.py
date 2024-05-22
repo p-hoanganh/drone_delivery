@@ -46,7 +46,7 @@ def generate_launch_description():
     xml = robot_desc.toxml()
     
     # Entity Name
-    entity_name = robot_base_name+"-"+str(random.random())
+    entity_name = robot_base_name
 
    
 

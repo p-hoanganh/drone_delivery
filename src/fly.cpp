@@ -31,8 +31,15 @@ public:
     ki_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_y", 10, std::bind(&Fly::ki_callback, this, std::placeholders::_1));
     kd_sub_ = this->create_subscription<std_msgs::msg::Float64>("height", 10, std::bind(&Fly::kd_callback, this, std::placeholders::_1));
 
+    base_speed_sub_ = this->create_subscription<std_msgs::msg::Float64>("base_speed", 10, std::bind(&Fly::base_speed_callback, this, std::placeholders::_1));
+
   }
 
+    void base_speed_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            base_speed_ = msg->data;
+        }
+        
     void kp_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
             target_x = msg->data;
@@ -82,29 +89,43 @@ void timer_callback()
     
     // Target height to hover at
     
+    if (target_height == 0.0){
+        float prop_1 = 0.0;
+        float prop_2 = 0.0;
+        float prop_3 = 0.0;
+        float prop_4 = 0.0;
 
-    // Calculate the control signal for height control
-    double velocity_ = PID_height_control(target_height);
+        auto message = drone_plugin::msg::MotorSpeed();
+        message.name = std::vector<std::string>{"prop_1","prop_2","prop_3","prop_4"};
+        message.velocity = std::vector<float>{prop_1, -prop_2, prop_3, -prop_4};
+        publisher_->publish(message);
+    } 
+    else {
+        // Calculate the control signal for height control
+        double velocity_ = PID_height_control(target_height);
 
-    std::array<double, 3> rpy = getRollPitchYaw(target_x, target_y);
-    // rpy = {0.0, 0.0, 0.0};
-    RCLCPP_INFO_STREAM(get_logger(), "Roll: " << rpy.at(0) << " " << "Pitch: " << rpy.at(1) << " " << "Yaw: " << rpy.at(2));
-    // Calculate the control signal for orientation control
-    std::array<double, 6> orientation_velocity = PID_orientation_control(rpy.at(0), rpy.at(1), rpy.at(2));
-    // std::array<double, 3> orientation_velocity = {0.0, 0.0, 0.0};
+        std::array<double, 3> rpy = getRollPitchYaw(target_x, target_y);
+        // rpy = {0.0, 0.0, 0.0};
+        RCLCPP_INFO_STREAM(get_logger(), "Roll: " << rpy.at(0) << " " << "Pitch: " << rpy.at(1) << " " << "Yaw: " << rpy.at(2));
+        // Calculate the control signal for orientation control
+        std::array<double, 6> orientation_velocity = PID_orientation_control(rpy.at(0), rpy.at(1), rpy.at(2));
+        // std::array<double, 3> orientation_velocity = {0.0, 0.0, 0.0};
 
-    float prop_1 = static_cast<float>(base_speed_+ velocity_  + orientation_velocity.at(0) + orientation_velocity.at(1) + orientation_velocity.at(2));
-    float prop_2 = static_cast<float>(base_speed_ + velocity_ + orientation_velocity.at(0) - orientation_velocity.at(1) - orientation_velocity.at(2));
-    float prop_3 = static_cast<float>(base_speed_ + velocity_ - orientation_velocity.at(0) - orientation_velocity.at(1) + orientation_velocity.at(2));
-    float prop_4 = static_cast<float>(base_speed_ + velocity_ - orientation_velocity.at(0) + orientation_velocity.at(1) - orientation_velocity.at(2));
+        float prop_1 = static_cast<float>(base_speed_+ velocity_  + orientation_velocity.at(0) + orientation_velocity.at(1) + orientation_velocity.at(2));
+        float prop_2 = static_cast<float>(base_speed_ + velocity_ + orientation_velocity.at(0) - orientation_velocity.at(1) - orientation_velocity.at(2));
+        float prop_3 = static_cast<float>(base_speed_ + velocity_ - orientation_velocity.at(0) - orientation_velocity.at(1) + orientation_velocity.at(2));
+        float prop_4 = static_cast<float>(base_speed_ + velocity_ - orientation_velocity.at(0) + orientation_velocity.at(1) - orientation_velocity.at(2));
 
-    auto message = drone_plugin::msg::MotorSpeed();
-    message.name = std::vector<std::string>{"prop_1","prop_2","prop_3","prop_4"};
-    message.velocity = std::vector<float>{prop_1, -prop_2, prop_3, -prop_4};
-    publisher_->publish(message);
-    RCLCPP_INFO_STREAM(get_logger(), "Prop 1: " << prop_1 << " " << "Prop 2: " << prop_2 << " " << "Prop 3: " << prop_3 << " " << "Prop 4: " << prop_4);
-    RCLCPP_INFO_STREAM(get_logger(), "Heigth: "<<pose_.pose.position.z<<" Roll: " << orientation_velocity.at(3) << " " << "Pitch: " << orientation_velocity.at(4) << " " << "Yaw: " << orientation_velocity.at(5));
-    RCLCPP_INFO_STREAM(get_logger(), "Error: "<< rpy.at(2)- orientation_velocity.at(5) << " Control Signal: "<< orientation_velocity.at(2));
+        auto message = drone_plugin::msg::MotorSpeed();
+        message.name = std::vector<std::string>{"prop_1","prop_2","prop_3","prop_4"};
+        message.velocity = std::vector<float>{prop_1, -prop_2, prop_3, -prop_4};
+        publisher_->publish(message);
+        RCLCPP_INFO_STREAM(get_logger(), "Prop 1: " << prop_1 << " " << "Prop 2: " << prop_2 << " " << "Prop 3: " << prop_3 << " " << "Prop 4: " << prop_4);
+        RCLCPP_INFO_STREAM(get_logger(), "Heigth: "<<pose_.pose.position.z<<" Roll: " << orientation_velocity.at(3) << " " << "Pitch: " << orientation_velocity.at(4) << " " << "Yaw: " << orientation_velocity.at(5));
+        RCLCPP_INFO_STREAM(get_logger(), "Error: "<< rpy.at(2)- orientation_velocity.at(5) << " Control Signal: "<< orientation_velocity.at(2));
+        RCLCPP_INFO_STREAM(get_logger(), "X: " <<target_x << " " << "Y: " << target_y << " " << "Z: " << target_height);
+    }
+    
 }
 
 std::array<double, 3> getRollPitchYaw(double target_x, double target_y){
@@ -228,6 +249,8 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr ki_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr kp_sub_;
 
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr base_speed_sub_;
+
     rclcpp::TimerBase::SharedPtr timer_;
     geometry_msgs::msg::PoseStamped pose_;
     double base_speed_ = 117.0;
@@ -286,8 +309,8 @@ private:
     double ki = 0.003; // Integral control gain
     double kd = 7.0; // Derivative control gain
 
-    double target_x = 0.5;
-    double target_y = 0.5;
+    double target_x = 0.0;
+    double target_y = 0.0;
     double target_height = 1.0;
     
     

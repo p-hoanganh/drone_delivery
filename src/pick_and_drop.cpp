@@ -114,7 +114,7 @@ void timer_callback()
 
         // Increse the base speed to compensate for the weight of the part
         std_msgs::msg::Float64 base_speed_msg;
-        base_speed_msg.data = base_speed_ + 1.0;
+        base_speed_msg.data = base_speed_ + 1.5;
         base_speed_pub_->publish(base_speed_msg);
 
         // Raise the robot to a safe height
@@ -186,33 +186,50 @@ void timer_callback()
 
     }
     else{
-        // Go to home
-        if(go_to_location){
-            std_msgs::msg::Float64 height_msg;
-            height_msg.data = 0.2;
-            height_pub_->publish(height_msg);
+        index++;
+        std::pair<double,double> pick_up_location = pick_up_locations[index];
+        std::pair<double,double> drop_off_location = drop_off_locations[index];
 
-            std_msgs::msg::Float64 x_target_msg;
-            x_target_msg.data = home_x;
-            x_target_pub_->publish(x_target_msg);
+        pick_up_x = pick_up_location.first;
+        pick_up_y = pick_up_location.second;
 
-            std_msgs::msg::Float64 y_target_msg;
-            y_target_msg.data = home_y;
-            y_target_pub_->publish(y_target_msg);
-            if (std::abs(x - home_x) > 0.11 || std::abs(y - home_y) > 0.11){
-                // rclcpp::sleep_for(std::chrono::milliseconds(100));
-                RCLCPP_INFO(get_logger(), "x: %f, y: %f", x, y);
-                return;
+        drop_off_x = drop_off_location.first;
+        drop_off_y = drop_off_location.second;
+
+        pick_up = true;
+        go_to_location = true;
+
+        if(index == 4){
+            // Go to home
+            if(go_to_location){
+                std_msgs::msg::Float64 height_msg;
+                height_msg.data = 0.2;
+                height_pub_->publish(height_msg);
+
+                std_msgs::msg::Float64 x_target_msg;
+                x_target_msg.data = home_x;
+                x_target_pub_->publish(x_target_msg);
+
+                std_msgs::msg::Float64 y_target_msg;
+                y_target_msg.data = home_y;
+                y_target_pub_->publish(y_target_msg);
+                if (std::abs(x - home_x) > 0.11 || std::abs(y - home_y) > 0.11){
+                    // rclcpp::sleep_for(std::chrono::milliseconds(100));
+                    RCLCPP_INFO(get_logger(), "x: %f, y: %f", x, y);
+                    return;
+                }
+                go_to_location = false;
             }
-            go_to_location = false;
-        }
-    
-        // Lower the robot to the home location
+            // Lower the robot to the home location
         
-        std_msgs::msg::Float64 height_msg;
-        height_msg.data = 0.0;
-        height_pub_->publish(height_msg);
-        timer_->cancel();
+                std_msgs::msg::Float64 height_msg;
+                height_msg.data = 0.0;
+                height_pub_->publish(height_msg);
+                timer_->cancel();
+        }
+        
+    
+        
 
     }
 
@@ -240,7 +257,10 @@ private:
     rclcpp::CallbackGroup::SharedPtr part_callback_group_;
 
 
-    
+    std::vector<std::pair<double, double>> pick_up_locations = {{0.5, 2.0}, {1.0, 1.75}, {1.0, 1.5}, {0.5, 1.25}};
+    std::vector<std::pair<double, double>> drop_off_locations = {{0.5, 9.5}, {9.5, 9.5}, {4.5, 5.5}, {9.5, 0.5}};
+
+    int index = 0;
     
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -263,18 +283,18 @@ private:
     double height = 0.0;
 
     // Pick up location
-    double pick_up_x = 0.5;
-    double pick_up_y = 0.5;
+    double pick_up_x = pick_up_locations[0].first;
+    double pick_up_y = pick_up_locations[0].second;
 
 
     // Drop off location
-    double drop_off_x = 5.0;
-    double drop_off_y = 5.0;
-    double drop_off_height = 0.2;
+    double drop_off_x = drop_off_locations[0].first;
+    double drop_off_y = drop_off_locations[0].second;
+    double drop_off_height = 0.4;
 
 
     // Lower the drone till part is attached
-    double offset = 0.01;
+    double offset = 0.05;
     double target_height = 0.5;
 
     // Home location

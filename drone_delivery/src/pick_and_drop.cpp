@@ -110,12 +110,13 @@ void timer_callback()
             target_height -= offset;
             return;
         }
+        target_height = 0.7;
 
 
         // Increse the base speed to compensate for the weight of the part
-        std_msgs::msg::Float64 base_speed_msg;
-        base_speed_msg.data = base_speed_ + 1.5;
-        base_speed_pub_->publish(base_speed_msg);
+        // std_msgs::msg::Float64 base_speed_msg;
+        // base_speed_msg.data = base_speed_ + 1;
+        // base_speed_pub_->publish(base_speed_msg);
 
         // Raise the robot to a safe height
         std_msgs::msg::Float64 height_msg;
@@ -150,7 +151,7 @@ void timer_callback()
             std_msgs::msg::Float64 y_target_msg;
             y_target_msg.data = drop_off_y;
             y_target_pub_->publish(y_target_msg);
-            if (std::abs(x - drop_off_x) > 0.1 || std::abs(y - drop_off_y) > 0.1){
+            if (std::abs(x - drop_off_x) > 0.2 || std::abs(y - drop_off_y) > 0.2){
                 // rclcpp::sleep_for(std::chrono::milliseconds(100));
                 RCLCPP_INFO(get_logger(), "x: %f, y: %f", x, y);
                 return;
@@ -257,7 +258,7 @@ private:
     rclcpp::CallbackGroup::SharedPtr part_callback_group_;
 
 
-    std::vector<std::pair<double, double>> pick_up_locations = {{0.5, 2.0}, {1.0, 1.75}, {1.0, 1.5}, {0.5, 1.25}};
+    std::vector<std::pair<double, double>> pick_up_locations = {{0.5, 2.0}, {1.5, 2.0}, {1.5, 3.0}, {0.5, 3.0}};
     std::vector<std::pair<double, double>> drop_off_locations = {{0.5, 9.5}, {9.5, 9.5}, {4.5, 5.5}, {9.5, 0.5}};
 
     int index = 0;

@@ -12,7 +12,7 @@ def generate_aruco_marker(marker_id, marker_size, dictionary, save_path):
     - save_path: Path where the marker image will be saved.
     """
     # Create the specified dictionary
-    aruco_dict = cv2.aruco.Dictionary_get(dictionary)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
     
     # Generate the marker image
     marker_image = np.zeros((marker_size, marker_size), dtype=np.uint8)

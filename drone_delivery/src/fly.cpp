@@ -1,6 +1,7 @@
 #include <iostream>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/float64.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include <drone_plugin/msg/motor_speed.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -27,34 +28,81 @@ public:
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&Fly::timer_callback, this));
 
 
-    kp_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_x", 10, std::bind(&Fly::kp_callback, this, std::placeholders::_1));
-    ki_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_y", 10, std::bind(&Fly::ki_callback, this, std::placeholders::_1));
-    kd_sub_ = this->create_subscription<std_msgs::msg::Float64>("height", 10, std::bind(&Fly::kd_callback, this, std::placeholders::_1));
+    height_sub_ = this->create_subscription<std_msgs::msg::Float64>("height", 10, std::bind(&Fly::height_callback, this, std::placeholders::_1));
+    x_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_x", 10, std::bind(&Fly::x_callback, this, std::placeholders::_1));
+    y_sub_ = this->create_subscription<std_msgs::msg::Float64>("target_y", 10, std::bind(&Fly::y_callback, this, std::placeholders::_1));
 
-    base_speed_sub_ = this->create_subscription<std_msgs::msg::Float64>("base_speed", 10, std::bind(&Fly::base_speed_callback, this, std::placeholders::_1));
+    part_attached_sub_ = this->create_subscription<std_msgs::msg::Bool>("part_attached", 10, std::bind(&Fly::part_attached_callback, this, std::placeholders::_1));
+
+    kp_sub_ = this->create_subscription<std_msgs::msg::Float64>("kp", 10, std::bind(&Fly::kp_callback, this, std::placeholders::_1));
+    ki_sub_ = this->create_subscription<std_msgs::msg::Float64>("ki", 10, std::bind(&Fly::ki_callback, this, std::placeholders::_1));
+    kd_sub_ = this->create_subscription<std_msgs::msg::Float64>("kd", 10, std::bind(&Fly::kd_callback, this, std::placeholders::_1));
 
   }
 
-    void base_speed_callback(const std_msgs::msg::Float64::SharedPtr msg)
-        {
-            base_speed_ = msg->data;
+    void part_attached_callback(const std_msgs::msg::Bool::SharedPtr msg)
+    {
+        part_attached = msg->data;
+        if (part_attached){
+            RCLCPP_INFO_STREAM(get_logger(), "Part attached Gain Changed");
+            base_speed_ = 118.0;
+            kp = 12.5;
+            ki = 0.3;
+            kd = 7.1;
+
+        } else {
+            RCLCPP_INFO_STREAM(get_logger(), "Part detached Gain Changed");
+            base_speed_ = 117.0;
+            kp = 11.5;
+            ki = 0.2;
+            kd = 7.1;
         }
-        
+    }
+
     void kp_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            // roll_kp = msg->data;
+            // pitch_kp = msg->data;
+            x_kp = msg->data;
+            y_kp = msg->data;
+            // kp = msg->data;
+        }
+
+    void ki_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            // roll_ki = msg->data;
+            // pitch_ki = msg->data;
+            x_ki = msg->data;
+            y_ki = msg->data;
+            // ki = msg->data;
+        }
+    
+    void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
+        {
+            // roll_kd = msg->data;
+            // pitch_kd = msg->data;
+            x_kd = msg->data;
+            y_kd = msg->data;
+            // kd = msg->data;
+        }
+
+    
+        
+    void x_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
             target_x = msg->data;
             // yaw_kp = msg->data;
             // y_kp = msg->data;
         }
     
-    void ki_callback(const std_msgs::msg::Float64::SharedPtr msg)
+    void y_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {
             target_y = msg->data;
             // yaw_ki = msg->data;
             // y_ki = msg->data;
         }
     
-    void kd_callback(const std_msgs::msg::Float64::SharedPtr msg)
+    void height_callback(const std_msgs::msg::Float64::SharedPtr msg)
         {   
             target_height = msg->data;
             // yaw_kd = msg->data;
@@ -156,15 +204,15 @@ std::array<double, 3> getRollPitchYaw(double target_x, double target_y){
     double x_control_signal = x_kp * x_error + x_ki * x_integral + x_kd * x_derivative;
     double y_control_signal = y_kp * y_error + y_ki * y_integral + y_kd * y_derivative;
 
-    if (x_control_signal >  0.261799){
-        x_control_signal =  0.261799;
-    } else if (x_control_signal < -0.261799){
-        x_control_signal = -0.2617995;
+    if (x_control_signal >  0.35){
+        x_control_signal =  0.35;
+    } else if (x_control_signal < -0.35){
+        x_control_signal = -0.35;
     }
-    if (y_control_signal >  0.261799){
-        y_control_signal =  0.261799;
-    } else if (y_control_signal < -0.261799){
-        y_control_signal = -0.2617995;
+    if (y_control_signal >  0.35){
+        y_control_signal =  0.35;
+    } else if (y_control_signal < -0.35){
+        y_control_signal = -0.35;
     }
     std::array<double, 3> rpy = { -y_control_signal, x_control_signal, 0.0};
 
@@ -249,7 +297,12 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr ki_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr kp_sub_;
 
-    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr base_speed_sub_;
+
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr height_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr x_sub_;
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr y_sub_;
+
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr part_attached_sub_;
 
     rclcpp::TimerBase::SharedPtr timer_;
     geometry_msgs::msg::PoseStamped pose_;
@@ -297,21 +350,23 @@ private:
     double y_prev_error = 0.0;
 
 
-    double x_kp = 0.01;
-    double x_ki = 0.003;
-    double x_kd = 0.000001;
+    double x_kp = 0.03;
+    double x_ki = 0.0000000;
+    double x_kd = 0.0000008;
 
-    double y_kp = 0.01;
-    double y_ki = 0.003;
-    double y_kd = 0.000001;
+    double y_kp = 0.013;
+    double y_ki = 0.0000000;
+    double y_kd = 0.0000008;
 
-    double kp = 10.2; // Proportional control gain
-    double ki = 0.003; // Integral control gain
-    double kd = 7.0; // Derivative control gain
+    double kp = 11.5;
+    double ki = 0.2;
+    double kd = 7.1;
 
     double target_x = 0.0;
     double target_y = 0.0;
     double target_height = 1.0;
+
+    bool part_attached = false;
     
     
 };

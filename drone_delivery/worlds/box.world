@@ -132,7 +132,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>0.5 0.5 0 0 -0 0</pose>
+      <pose>0.5 2.0 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
       <sim_time>55 357000000</sim_time>
@@ -140,10 +140,10 @@
       <wall_time>1716005868 727522380</wall_time>
       <iterations>55357</iterations>
       <model name='box_0'>
-        <pose>0.5 0.5 0.099999 -2e-06 -1e-06 3e-06</pose>
+        <pose>0.5 2.0 0.099999 -2e-06 -1e-06 3e-06</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>0.5 0.5 0.099999 -2e-06 -1e-06 3e-06</pose>
+          <pose>0.5 2.0 0.099999 -2e-06 -1e-06 3e-06</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 -9.8 0 -0 0</acceleration>
           <wrench>0 0 -9.8 0 -0 0</wrench>

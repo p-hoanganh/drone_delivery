@@ -69,6 +69,7 @@ install(TARGETS
 install(
   PROGRAMS
   launch/robot_description_publisher.py
+  scripts/aruco_detector.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
